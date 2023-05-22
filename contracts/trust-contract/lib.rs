@@ -1,13 +1,13 @@
-use borsh::{ BorshDeserialize, BorshSerialize };
+use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{
-    env, near_bindgen, AccountId, Balance, Promise,
-    collections::{ UnorderedMap },
-    json_types::{ U128 },
+    collections::UnorderedMap, env, json_types::U128, near_bindgen, AccountId, Balance, Promise,
 };
 
+/// 自定义内存管理
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+/// 告诉 near 这是一个 near 合约
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Trust {
@@ -16,6 +16,7 @@ pub struct Trust {
 }
 
 impl Default for Trust {
+    /// 不提供默认实现
     fn default() -> Self {
         panic!("should be initialized before usage")
     }
@@ -23,9 +24,13 @@ impl Default for Trust {
 
 #[near_bindgen]
 impl Trust {
+    /// 初始化合约
     #[init]
     pub fn new(owner_id: AccountId) -> Self {
-        assert!(env::is_valid_account_id(owner_id.as_bytes()), "Owner's account ID is invalid.");
+        assert!(
+            env::is_valid_account_id(owner_id.as_bytes()),
+            "Owner's account ID is invalid."
+        );
         assert!(!env::state_exists(), "Already initialized");
         Self {
             owner_id,
@@ -33,6 +38,7 @@ impl Trust {
         }
     }
 
+    /// 定金，提供支付功能
     #[payable]
     pub fn deposit(&mut self) {
         let deposit = env::attached_deposit();
@@ -42,6 +48,7 @@ impl Trust {
         self.balances.insert(&account_id, &balance);
     }
 
+    /// 提取
     pub fn withdraw(&mut self, amount: U128) {
         let amount_u128 = amount.into();
         let account_id = env::signer_account_id();
@@ -53,6 +60,7 @@ impl Trust {
         Promise::new(account_id).transfer(balance);
     }
 
+    /// 获取余额
     pub fn get_balance(&self, account_id: AccountId) -> U128 {
         self.balances.get(&account_id).unwrap_or(0).into()
     }
@@ -64,7 +72,7 @@ mod tests {
     use super::*;
     use near_sdk::MockedBlockchain;
     use near_sdk::{testing_env, VMContext};
-    
+
     fn ntoy(near_amount: u128) -> U128 {
         U128(near_amount * 10u128.pow(24))
     }
@@ -126,9 +134,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(
-        expected = r#"not enough tokens"#
-    )]
+    #[should_panic(expected = r#"not enough tokens"#)]
     fn should_panic_withdraw() {
         let mut context = get_context();
         testing_env!(context.clone());

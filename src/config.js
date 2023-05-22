@@ -1,4 +1,5 @@
-const contractName = 'dev-1621302059600-80550158376073';
+// 需要部署合约的账户 id
+const contractName = 'xh1109test.testnet';
 
 module.exports = function getConfig(isServer = false) {
   let config = {
